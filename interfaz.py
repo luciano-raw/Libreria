@@ -28,7 +28,7 @@ from ticket import imprimir_boleta
 
 # Configuración global de la librería
 ctk.set_appearance_mode("System")
-ctk.set_default_color_theme("blue") 
+ctk.set_default_color_theme("blue") # Volvemos al tema anterior como pediste
         
 
 class App(ctk.CTk):
@@ -472,25 +472,32 @@ class App(ctk.CTk):
         self.quote_detail_tree.configure(yscrollcommand=d_scrollbar.set)
         d_scrollbar.grid(row=0, column=1, sticky="ns")
 
-        # --- MODIFICADO: Botones de Acción (Se añade Modificar) ---
+        # --- MODIFICADO: Botones de Acción (Se añade Duplicar) ---
         action_buttons_frame = ctk.CTkFrame(quote_detail_frame, fg_color="transparent")
         action_buttons_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
-        action_buttons_frame.grid_columnconfigure((0, 1, 2), weight=1) # 3 columnas
+        action_buttons_frame.grid_columnconfigure((0, 1, 2, 3), weight=1) # 4 columnas
         
         self.convert_quote_button = ctk.CTkButton(action_buttons_frame, text="✅ Convertir a Venta", 
                                              fg_color="#4CAF50", hover_color="#45a049",
                                              command=self.on_convert_quote_to_sale)
         self.convert_quote_button.grid(row=0, column=0, padx=(0,5), sticky="ew")
         
-        self.modify_quote_button = ctk.CTkButton(action_buttons_frame, text="✏️ Modificar Cotización",
+        self.modify_quote_button = ctk.CTkButton(action_buttons_frame, text="✏️ Modificar",
                                             fg_color="#FF9800", hover_color="#FB8C00",
                                             command=self.on_modify_quote)
         self.modify_quote_button.grid(row=0, column=1, padx=5, sticky="ew")
 
-        self.delete_quote_button = ctk.CTkButton(action_buttons_frame, text="❌ Eliminar Cotización",
+        # --- BOTÓN NUEVO ---
+        self.duplicate_quote_button = ctk.CTkButton(action_buttons_frame, text="📋 Duplicar",
+                                            fg_color="#00BCD4", hover_color="#00ACC1",
+                                            command=self.on_duplicate_quote)
+        self.duplicate_quote_button.grid(row=0, column=2, padx=5, sticky="ew")
+        # --- FIN BOTÓN NUEVO ---
+
+        self.delete_quote_button = ctk.CTkButton(action_buttons_frame, text="❌ Eliminar",
                                             fg_color="#f44336", hover_color="#d32f2f",
                                             command=self.on_delete_quote)
-        self.delete_quote_button.grid(row=0, column=2, padx=(5,0), sticky="ew")
+        self.delete_quote_button.grid(row=0, column=3, padx=(5,0), sticky="ew")
         # --- FIN DE MODIFICACIÓN ---
         
         self.quotes_tree.bind("<<TreeviewSelect>>", self.on_select_quote)
@@ -537,9 +544,10 @@ class App(ctk.CTk):
                 f"${subtotal:.2f}"
             ))
             
-        # --- MODIFICADO: Habilitar los 3 botones ---
+        # --- MODIFICADO: Habilitar los 4 botones ---
         self.convert_quote_button.configure(state="normal")
         self.modify_quote_button.configure(state="normal")
+        self.duplicate_quote_button.configure(state="normal") # <-- AÑADIDO
         self.delete_quote_button.configure(state="normal")
 
     def clear_quote_details(self):
@@ -552,9 +560,10 @@ class App(ctk.CTk):
         if self.quotes_tree.selection():
             self.quotes_tree.selection_remove(self.quotes_tree.selection())
             
-        # --- MODIFICADO: Deshabilitar los 3 botones ---
+        # --- MODIFICADO: Deshabilitar los 4 botones ---
         self.convert_quote_button.configure(state="disabled")
         self.modify_quote_button.configure(state="disabled")
+        self.duplicate_quote_button.configure(state="disabled") # <-- AÑADIDO
         self.delete_quote_button.configure(state="disabled")
         
     def on_convert_quote_to_sale(self):
@@ -575,24 +584,62 @@ class App(ctk.CTk):
         else:
             messagebox.showerror("Error de Conversión", f"No se pudo completar la conversión.\n\nMotivo: {mensaje}\n(La cotización NO fue eliminada).")
 
-    # --- FUNCIÓN NUEVA AÑADIDA ---
     def on_modify_quote(self):
-        """
-        Manejador para 'Modificar Cotización'.
-        Carga la cotización al carrito de ventas y la elimina,
-        permitiendo al usuario volver a guardarla con cambios.
-        """
         if self.selected_quote_id is None:
             return
 
-        # 1. Confirmar
         cliente_nombre = self.quotes_tree.item(self.quotes_tree.selection()[0])['values'][2]
         confirmar = messagebox.askyesno("Confirmar Modificación",
                                         f"¿Desea modificar la Cotización #{self.selected_quote_id} para '{cliente_nombre}'?\n\nLa cotización actual será ELIMINADA y sus productos se cargarán en el carrito de ventas para que pueda editarlos.")
         if not confirmar:
             return
 
-        # 2. Obtener detalles (gracias a logica.py, esto incluye 'codigo_barras' y 'cantidad')
+        detalles = obtener_detalle_cotizacion(self.selected_quote_id)
+        if not detalles:
+            messagebox.showerror("Error", "No se pudieron cargar los detalles de esta cotización.")
+            return
+
+        self.carrito = []
+        
+        print(f"Cargando {len(detalles)} productos al carrito...")
+        for item in detalles:
+            self.agregar_producto_al_carrito(item['codigo_barras'], item['cantidad'])
+        
+        print("Carrito cargado. Eliminando cotización antigua...")
+
+        exito_eliminar = eliminar_cotizacion_completa(self.selected_quote_id)
+        
+        if not exito_eliminar:
+            messagebox.showerror("Error", "No se pudo eliminar la cotización antigua. Abortando modificación.")
+            self.carrito = [] 
+            self.actualizar_carrito_gui()
+            return
+            
+        self.update_quotes_list()
+        self.clear_quote_details()
+        
+        self.select_frame_by_name("home")
+        
+        messagebox.showinfo("Listo para Modificar", 
+                            f"Los productos de la cotización #{self.selected_quote_id} están en el carrito.\n\nRealice sus cambios y presione 'Generar Cotización' para guardarla como una nueva.")
+
+    # --- FUNCIÓN NUEVA AÑADIDA ---
+    def on_duplicate_quote(self):
+        """
+        Manejador para 'Duplicar Cotización'.
+        Carga la cotización al carrito de ventas pero NO la elimina.
+        """
+        if self.selected_quote_id is None:
+            return
+
+        # 1. Confirmar
+        cliente_nombre = self.quotes_tree.item(self.quotes_tree.selection()[0])['values'][2]
+        confirmar = messagebox.askyesno("Confirmar Duplicación",
+                                        f"¿Desea duplicar la Cotización #{self.selected_quote_id} de '{cliente_nombre}'?\n\nLa cotización original se conservará y sus productos se cargarán en el carrito de ventas.")
+        if not confirmar:
+            return
+
+        # 2. Obtener detalles
         detalles = obtener_detalle_cotizacion(self.selected_quote_id)
         if not detalles:
             messagebox.showerror("Error", "No se pudieron cargar los detalles de esta cotización.")
@@ -602,32 +649,21 @@ class App(ctk.CTk):
         self.carrito = []
         
         # 4. Llenar el carrito de ventas con los productos de la cotización
-        print(f"Cargando {len(detalles)} productos al carrito...")
+        print(f"Cargando {len(detalles)} productos al carrito para duplicación...")
         for item in detalles:
-            # Usamos la 'cantidad' de la cotización
             self.agregar_producto_al_carrito(item['codigo_barras'], item['cantidad'])
         
-        print("Carrito cargado. Eliminando cotización antigua...")
-
-        # 5. Eliminar la cotización antigua
-        exito_eliminar = eliminar_cotizacion_completa(self.selected_quote_id)
-        
-        if not exito_eliminar:
-            messagebox.showerror("Error", "No se pudo eliminar la cotización antigua. Abortando modificación.")
-            self.carrito = [] # Limpiar el carrito de nuevo por seguridad
-            self.actualizar_carrito_gui()
-            return
+        print("Carrito cargado.")
             
-        # 6. Actualizar la GUI de cotizaciones
-        self.update_quotes_list()
+        # 5. Deseleccionar la cotización en la pestaña de gestión
         self.clear_quote_details()
         
-        # 7. Cambiar a la pestaña de Ventas
+        # 6. Cambiar a la pestaña de Ventas
         self.select_frame_by_name("home")
         
-        # 8. Informar al usuario
-        messagebox.showinfo("Listo para Modificar", 
-                            f"Los productos de la cotización #{self.selected_quote_id} están en el carrito.\n\nRealice sus cambios y presione 'Generar Cotización' para guardarla como una nueva.")
+        # 7. Informar al usuario
+        messagebox.showinfo("Listo para Duplicar", 
+                            f"Los productos de la cotización #{self.selected_quote_id} están en el carrito.\n\nPresione 'Generar Cotización' para guardarla con un nuevo nombre de cliente.")
     # --- FIN DE FUNCIÓN NUEVA ---
 
     def on_delete_quote(self):
