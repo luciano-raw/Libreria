@@ -8,6 +8,11 @@ from tkinter import messagebox
 import customtkinter as ctk
 from cotizacion_pdf import generar_pdf_cotizacion
 
+# --- AÑADIDO: Importaciones para iconos ---
+from PIL import Image
+import os
+# --- FIN DE AÑADIDOS ---
+
 from logica import (
     obtener_productos, 
     buscar_producto_por_codigo, 
@@ -28,10 +33,26 @@ from ticket import imprimir_boleta
 
 # Configuración global de la librería
 ctk.set_appearance_mode("System")
-ctk.set_default_color_theme("blue") # Volvemos al tema anterior como pediste
+ctk.set_default_color_theme("blue")
         
 
 class App(ctk.CTk):
+
+    # --- FUNCIÓN AUXILIAR NUEVA ---
+    def load_icon(self, name, size=(24, 24)):
+        """Carga un icono desde la carpeta 'assets' de forma segura."""
+        path = os.path.join(self.assets_path, name)
+        try:
+            # Carga la imagen usando Pillow y luego la convierte a CTkImage
+            img = Image.open(path)
+            return ctk.CTkImage(img, size=size)
+        except Exception as e:
+            print(f"Error cargando icono '{name}': {e}. Se usará un placeholder gris.")
+            # Retorna un placeholder gris si el archivo falta o está corrupto
+            placeholder = Image.new("RGB", size, "gray")
+            return ctk.CTkImage(placeholder, size=size)
+    # --- FIN DE FUNCIÓN AUXILIAR ---
+
     def __init__(self):
         super().__init__()
 
@@ -59,6 +80,27 @@ class App(ctk.CTk):
                                                    font=ctk.CTkFont(size=15, weight="bold"))
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
 
+        # --- INICIO DE MODIFICACIÓN: Carga de Iconos ---
+        
+        # 1. Definir la ruta a la carpeta de assets
+        self.assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets")
+        
+        # 2. Crear la carpeta 'assets' si no existe
+        if not os.path.exists(self.assets_path):
+            os.makedirs(self.assets_path)
+            print(f"Se ha creado la carpeta 'assets' en: {self.assets_path}")
+            print("Por favor, añade los iconos .png a esta carpeta.")
+
+        # 3. Cargar imágenes (AHORA DE FORMA INDIVIDUAL Y SEGURA)
+        self.icon_sales = self.load_icon("icon_sales.png")
+        self.icon_inventory = self.load_icon("icon_inventory.png")
+        self.icon_quotes = self.load_icon("icon_quotes.png")
+        self.icon_reports = self.load_icon("icon_reports.png")
+        
+        # --- FIN DE LA CARGA MODIFICADA ---
+
+
+        # 4. Modificar Botones para incluir iconos
         self.home_button = ctk.CTkButton(self.navigation_frame, 
                                          corner_radius=0, height=40, 
                                          border_spacing=10, 
@@ -67,6 +109,8 @@ class App(ctk.CTk):
                                          text_color=("gray10", "gray90"), 
                                          hover_color=("gray60", "gray40"), 
                                          anchor="w", 
+                                         image=self.icon_sales, # <-- AÑADIDO
+                                         compound="left",      # <-- AÑADIDO
                                          command=self.home_button_event)
         self.home_button.grid(row=1, column=0, sticky="ew")
 
@@ -78,6 +122,8 @@ class App(ctk.CTk):
                                             text_color=("gray10", "gray90"), 
                                             hover_color=("gray60", "gray40"), 
                                             anchor="w", 
+                                            image=self.icon_inventory, # <-- AÑADIDO
+                                            compound="left",         # <-- AÑADIDO
                                             command=self.frame_2_button_event)
         self.frame_2_button.grid(row=2, column=0, sticky="ew")
 
@@ -89,8 +135,26 @@ class App(ctk.CTk):
                                             text_color=("gray10", "gray90"), 
                                             hover_color=("gray60", "gray40"), 
                                             anchor="w", 
+                                            image=self.icon_quotes, # <-- AÑADIDO
+                                            compound="left",      # <-- AÑADIDO
                                             command=self.quotes_button_event)
         self.quotes_button.grid(row=3, column=0, sticky="ew")
+        
+        # --- Botón de Reportes (preparado para el futuro) ---
+        self.reports_button = ctk.CTkButton(self.navigation_frame, 
+                                            corner_radius=0, height=40, 
+                                            border_spacing=10, 
+                                            text="Reportes (Próximamente)", 
+                                            fg_color="transparent", 
+                                            text_color=("gray50", "gray50"), 
+                                            hover_color=("gray60", "gray40"), 
+                                            anchor="w", 
+                                            image=self.icon_reports, # <-- AÑADIDO
+                                            compound="left",      # <-- AÑADIDO
+                                            state="disabled") # Deshabilitado por ahora
+        self.reports_button.grid(row=4, column=0, sticky="ew")
+        
+        # --- FIN DE MODIFICACIÓN ---
 
 
         # --- Frames de Contenido ---
@@ -472,7 +536,7 @@ class App(ctk.CTk):
         self.quote_detail_tree.configure(yscrollcommand=d_scrollbar.set)
         d_scrollbar.grid(row=0, column=1, sticky="ns")
 
-        # --- MODIFICADO: Botones de Acción (Se añade Duplicar) ---
+        # --- Botones de Acción (con Duplicar) ---
         action_buttons_frame = ctk.CTkFrame(quote_detail_frame, fg_color="transparent")
         action_buttons_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         action_buttons_frame.grid_columnconfigure((0, 1, 2, 3), weight=1) # 4 columnas
@@ -487,18 +551,15 @@ class App(ctk.CTk):
                                             command=self.on_modify_quote)
         self.modify_quote_button.grid(row=0, column=1, padx=5, sticky="ew")
 
-        # --- BOTÓN NUEVO ---
         self.duplicate_quote_button = ctk.CTkButton(action_buttons_frame, text="📋 Duplicar",
                                             fg_color="#00BCD4", hover_color="#00ACC1",
                                             command=self.on_duplicate_quote)
         self.duplicate_quote_button.grid(row=0, column=2, padx=5, sticky="ew")
-        # --- FIN BOTÓN NUEVO ---
 
         self.delete_quote_button = ctk.CTkButton(action_buttons_frame, text="❌ Eliminar",
                                             fg_color="#f44336", hover_color="#d32f2f",
                                             command=self.on_delete_quote)
         self.delete_quote_button.grid(row=0, column=3, padx=(5,0), sticky="ew")
-        # --- FIN DE MODIFICACIÓN ---
         
         self.quotes_tree.bind("<<TreeviewSelect>>", self.on_select_quote)
         self.update_quotes_list()
@@ -544,10 +605,10 @@ class App(ctk.CTk):
                 f"${subtotal:.2f}"
             ))
             
-        # --- MODIFICADO: Habilitar los 4 botones ---
+        # Habilitar los 4 botones
         self.convert_quote_button.configure(state="normal")
         self.modify_quote_button.configure(state="normal")
-        self.duplicate_quote_button.configure(state="normal") # <-- AÑADIDO
+        self.duplicate_quote_button.configure(state="normal")
         self.delete_quote_button.configure(state="normal")
 
     def clear_quote_details(self):
@@ -560,10 +621,10 @@ class App(ctk.CTk):
         if self.quotes_tree.selection():
             self.quotes_tree.selection_remove(self.quotes_tree.selection())
             
-        # --- MODIFICADO: Deshabilitar los 4 botones ---
+        # Deshabilitar los 4 botones
         self.convert_quote_button.configure(state="disabled")
         self.modify_quote_button.configure(state="disabled")
-        self.duplicate_quote_button.configure(state="disabled") # <-- AÑADIDO
+        self.duplicate_quote_button.configure(state="disabled")
         self.delete_quote_button.configure(state="disabled")
         
     def on_convert_quote_to_sale(self):
@@ -623,7 +684,6 @@ class App(ctk.CTk):
         messagebox.showinfo("Listo para Modificar", 
                             f"Los productos de la cotización #{self.selected_quote_id} están en el carrito.\n\nRealice sus cambios y presione 'Generar Cotización' para guardarla como una nueva.")
 
-    # --- FUNCIÓN NUEVA AÑADIDA ---
     def on_duplicate_quote(self):
         """
         Manejador para 'Duplicar Cotización'.
@@ -664,7 +724,6 @@ class App(ctk.CTk):
         # 7. Informar al usuario
         messagebox.showinfo("Listo para Duplicar", 
                             f"Los productos de la cotización #{self.selected_quote_id} están en el carrito.\n\nPresione 'Generar Cotización' para guardarla con un nuevo nombre de cliente.")
-    # --- FIN DE FUNCIÓN NUEVA ---
 
     def on_delete_quote(self):
         if self.selected_quote_id is None:
@@ -921,6 +980,7 @@ class App(ctk.CTk):
         self.home_button.configure(fg_color=active_color if name == "home" else "transparent")
         self.frame_2_button.configure(fg_color=active_color if name == "inventory" else "transparent")
         self.quotes_button.configure(fg_color=active_color if name == "quotes" else "transparent")
+        self.reports_button.configure(fg_color=active_color if name == "reports" else "transparent")
 
         if name == "home":
             self.home_frame.grid(row=0, column=1, sticky="nsew")
@@ -939,6 +999,13 @@ class App(ctk.CTk):
             self.create_quotes_view()
         else:
             self.quotes_frame.grid_forget()
+            
+        # --- Lógica para la futura pestaña de reportes ---
+        # if name == "reports":
+        #     self.reports_frame.grid(row=0, column=1, sticky="nsew")
+        #     self.create_reports_view()
+        # else:
+        #     self.reports_frame.grid_forget()
 
 
     def home_button_event(self):
