@@ -20,16 +20,16 @@ def get_db_connection():
 # --- 1. CRUD (Create, Read, Update, Delete) de Productos
 # -----------------------------------------------
 
-def agregar_producto(codigo_barras, nombre, descripcion, precio_venta, stock):
+def agregar_producto(codigo_barras, nombre, descripcion, marca, precio_venta, stock):
     """Agrega un nuevo producto al inventario."""
     sql = """
-    INSERT INTO Productos (codigo_barras, nombre, descripcion, precio_venta, stock)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO Productos (codigo_barras, nombre, descripcion, marca, precio_venta, stock)
+    VALUES (?, ?, ?, ?, ?, ?)
     """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, (codigo_barras, nombre, descripcion, precio_venta, stock))
+            cursor.execute(sql, (codigo_barras, nombre, descripcion, marca, precio_venta, stock))
             conn.commit()
             print(f"Producto '{nombre}' agregado exitosamente.")
             return True
@@ -92,18 +92,18 @@ def buscar_productos_por_nombre(termino_busqueda):
         print(f"Error al buscar productos por nombre: {e}")
         return []
 
-def editar_producto(id_producto, nombre, descripcion, precio_venta, stock, codigo_barras): # <-- Se añadió codigo_barras
+def editar_producto(id_producto, nombre, descripcion, marca, precio_venta, stock, codigo_barras):
     """Actualiza los datos de un producto existente por su ID."""
     sql = """
     UPDATE Productos
-    SET nombre = ?, descripcion = ?, precio_venta = ?, stock = ?, codigo_barras = ?
+    SET nombre = ?, descripcion = ?, marca = ?, precio_venta = ?, stock = ?, codigo_barras = ?
     WHERE id = ?
     """
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             # Asegúrate de que el orden de los parámetros coincida
-            cursor.execute(sql, (nombre, descripcion, precio_venta, stock, codigo_barras, id_producto))
+            cursor.execute(sql, (nombre, descripcion, marca, precio_venta, stock, codigo_barras, id_producto))
             conn.commit()
             if cursor.rowcount > 0:
                 print(f"Producto ID {id_producto} actualizado.")
@@ -279,7 +279,8 @@ def obtener_detalle_cotizacion(cotizacion_id):
         dc.cantidad, 
         dc.precio_unitario_momento,
         dc.producto_id,
-        p.codigo_barras  -- <-- ¡ESTA ES LA LÍNEA NUEVA!
+        p.codigo_barras,
+        p.marca
     FROM Detalle_Cotizaciones dc
     JOIN Productos p ON dc.producto_id = p.id
     WHERE dc.cotizacion_id = ?
@@ -375,9 +376,9 @@ if __name__ == "__main__":
         exit()
 
     print("\n--- Prueba 1: Agregando productos ---")
-    agregar_producto("123456", "Lápiz HB", "Lápiz de grafito", 500.0, 100)
-    agregar_producto("123457", "Goma de borrar", "Goma blanca", 300.0, 50)
-    agregar_producto("123456", "Lápiz (Duplicado)", "Intento fallido", 1.0, 1) # Esto debería fallar
+    agregar_producto("123456", "Lápiz HB", "Lápiz de grafito", "Faber-Castell", 500.0, 100)
+    agregar_producto("123457", "Goma de borrar", "Goma blanca", "Pelikan", 300.0, 50)
+    agregar_producto("123456", "Lápiz (Duplicado)", "Intento fallido", "Test", 1.0, 1) # Esto debería fallar
 
     print("\n--- Prueba 2: Obteniendo productos ---")
     productos = obtener_productos()

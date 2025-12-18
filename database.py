@@ -21,6 +21,7 @@ def crear_tablas():
                 codigo_barras TEXT UNIQUE,
                 nombre TEXT NOT NULL,
                 descripcion TEXT,
+                marca TEXT,
                 precio_venta REAL NOT NULL,
                 stock INTEGER NOT NULL DEFAULT 0
             );
@@ -65,6 +66,15 @@ def crear_tablas():
             
             # executescript puede ejecutar múltiples sentencias SQL a la vez
             cursor.executescript(sql_script)
+            
+            # Añadir columna 'marca' si no existe (para bases de datos existentes)
+            try:
+                cursor.execute("ALTER TABLE Productos ADD COLUMN marca TEXT")
+                print("Columna 'marca' añadida a la tabla Productos.")
+            except sqlite3.OperationalError:
+                # La columna ya existe, no hacer nada
+                pass
+            
             print("Base de datos y tablas creadas exitosamente.")
             
     except sqlite3.Error as e:
