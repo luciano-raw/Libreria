@@ -20,15 +20,32 @@ const COLORS = {
 export async function generateQuotePDF(quote: any) {
     const doc = new jsPDF()
 
+    // Default colors (Zinc) if no store settings
+    const primaryColor = quote.store?.pdfPrimaryColor || '#18181b'
+    const secondaryColor = quote.store?.pdfSecondaryColor || '#27272a'
+
+    // Convert hex to rgb
+    const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+            parseInt(result[1], 16),
+            parseInt(result[2], 16),
+            parseInt(result[3], 16)
+        ] : [24, 24, 27];
+    }
+
+    const primaryRGB = hexToRgb(primaryColor)
+    const secondaryRGB = hexToRgb(secondaryColor)
+
     // --- Header ---
     // Full width header bar
-    doc.setFillColor(COLORS.primary[0], COLORS.primary[1], COLORS.primary[2])
+    doc.setFillColor(primaryRGB[0], primaryRGB[1], primaryRGB[2])
     doc.rect(0, 0, 210, 40, 'F')
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(22)
     doc.setTextColor(COLORS.text_light[0], COLORS.text_light[1], COLORS.text_light[2])
-    doc.text('Librería Agosto 7', 15, 18)
+    doc.text(quote.store?.name || 'Librería Agosto 7', 15, 18)
 
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
@@ -42,8 +59,12 @@ export async function generateQuotePDF(quote: any) {
     // Contact Info (Below header)
     doc.setTextColor(COLORS.text_dark[0], COLORS.text_dark[1], COLORS.text_dark[2])
     doc.setFontSize(9)
-    doc.text('Tel: (555) 123-4567', 195, 50, { align: 'right' })
-    doc.text('Email: contacto@libreriaagosto7.com', 195, 55, { align: 'right' })
+    // Only show if available, otherwise use defaults
+    const phone = quote.store?.phone || '(555) 123-4567'
+    const email = quote.store?.email || 'contacto@libreriaagosto7.com'
+
+    doc.text(`Tel: ${phone}`, 195, 50, { align: 'right' })
+    doc.text(`Email: ${email}`, 195, 55, { align: 'right' })
     doc.text('Calle Principal #1234', 195, 60, { align: 'right' })
 
     let yPos = 50
@@ -88,7 +109,7 @@ export async function generateQuotePDF(quote: any) {
             `$${(Number(item.price) * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
         ]),
         headStyles: {
-            fillColor: COLORS.secondary,
+            fillColor: [secondaryRGB[0], secondaryRGB[1], secondaryRGB[2]],
             textColor: COLORS.text_light,
             fontStyle: 'bold',
             halign: 'left'

@@ -14,6 +14,11 @@ model Store {
   id        String   @id @default(uuid())
   name      String
   slug      String   @unique // For URL-based access (e.g. app.com/dashboard/libreria-central)
+  
+  // Customization
+  pdfPrimaryColor   String @default("#18181b") // Zinc 900
+  pdfSecondaryColor String @default("#27272a") // Zinc 800
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

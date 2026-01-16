@@ -53,7 +53,8 @@ export async function getQuotes() {
             include: {
                 _count: {
                     select: { items: true }
-                }
+                },
+                store: true
             }
         })
         return { success: true, quotes }
@@ -70,7 +71,8 @@ export async function getQuote(id: string) {
             include: {
                 items: {
                     include: { product: true }
-                }
+                },
+                store: true
             }
         })
 

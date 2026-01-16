@@ -58,3 +58,49 @@ export async function createFirstStore(storeName: string) {
         return { success: false, message: 'Error al crear la tienda.' }
     }
 }
+
+// Helper (duplicated from products.ts for now, ideally shared)
+async function getActiveStoreId() {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Unauthorized')
+
+    const userStore = await db.storeUser.findFirst({
+        where: { userId },
+        select: { storeId: true }
+    })
+
+    if (!userStore) throw new Error('No Store found for this user')
+    return userStore.storeId
+}
+
+export async function getStoreSettings() {
+    try {
+        const storeId = await getActiveStoreId()
+        const store = await db.store.findUnique({
+            where: { id: storeId },
+            select: { pdfPrimaryColor: true, pdfSecondaryColor: true } as any
+        })
+        return { success: true, settings: store }
+    } catch (error) {
+        return { success: false, message: 'Error retrieving settings' }
+    }
+}
+
+export async function updateStoreSettings(data: { pdfPrimaryColor: string, pdfSecondaryColor: string }) {
+    try {
+        const storeId = await getActiveStoreId()
+
+        await db.store.update({
+            where: { id: storeId },
+            data: {
+                pdfPrimaryColor: data.pdfPrimaryColor,
+                pdfSecondaryColor: data.pdfSecondaryColor
+            }
+        })
+
+        revalidatePath('/settings')
+        return { success: true, message: 'Configuración actualizada.' }
+    } catch (error) {
+        return { success: false, message: 'Error updating settings' }
+    }
+}
