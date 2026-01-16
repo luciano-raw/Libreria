@@ -13,18 +13,19 @@ export async function createQuote(data: {
 
     // Calculate total on server side for security
     const total = data.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    const roundedTotal = Math.round(total * 100) / 100
 
     try {
         const quote = await db.quote.create({
             data: {
                 storeId,
                 clientName: data.clientName,
-                total,
+                total: roundedTotal,
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
                         quantity: item.quantity,
-                        price: item.price
+                        price: Math.round(item.price * 100) / 100
                     }))
                 }
             },
@@ -65,14 +66,14 @@ export async function getQuote(id: string) {
     const storeId = await getActiveStoreId()
     try {
         const quote = await db.quote.findUnique({
-             where: { id },
-             include: {
-                 items: {
-                     include: { product: true }
-                 }
-             }
+            where: { id },
+            include: {
+                items: {
+                    include: { product: true }
+                }
+            }
         })
-        
+
         if (!quote || quote.storeId !== storeId) {
             return { success: false, error: 'Quote not found' }
         }
