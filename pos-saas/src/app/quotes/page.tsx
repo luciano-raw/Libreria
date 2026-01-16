@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, FileText, Download, Loader2, Eye } from 'lucide-react'
+import { Search, FileText, Download, Loader2, Eye, Settings } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from '@/hooks/use-toast'
 
@@ -75,6 +76,12 @@ export default function QuotesPage() {
                     <p className="text-zinc-400">Gestiona y recupera cotizaciones pasadas.</p>
                 </div>
                 <div className="flex gap-2">
+                    <Link href="/settings">
+                        <Button variant="outline" className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Configurar PDF
+                        </Button>
+                    </Link>
                     <Button variant="outline" className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white" onClick={() => window.location.href = '/'}>
                         ← Volver
                     </Button>
