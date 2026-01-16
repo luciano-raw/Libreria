@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Multi-Tenancy Core ---
+
+model Store {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique // For URL-based access (e.g. app.com/dashboard/libreria-central)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  users     StoreUser[]
+  products  Product[]
+  sales     Sale[]
+  quotes    Quote[]
+  customers Customer[]
+}
+
+model User {
+  id        String   @id // This will match Clerk/Auth Provider ID
+  email     String   @unique
+  name      String?
+  status    UserStatus @default(PENDING)
+  isSuperAdmin Boolean @default(false)
+  createdAt DateTime   @default(now())
+
+  // Relations
+  stores    StoreUser[]
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// Junction table for Many-to-Many between User and Store (A user can own/work in multiple stores)
+model StoreUser {
+  id        String   @id @default(uuid())
+  userId    String
+  storeId   String
+  role      Role     @default(STAFF) // OWNER, MANAGER, STAFF
+
+  user      User     @relation(fields: [userId], references: [id])
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([userId, storeId])
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+// --- POS Business Logic ---
+
+model Product {
+  id          String   @id @default(uuid())
+  storeId     String
+  name        String
+  description String?
+  barcode     String?  // Can be null if it's a service or manual item
+  price       Decimal  @db.Decimal(10, 2)
+  cost        Decimal? @db.Decimal(10, 2) // For profit calculation
+  stock       Int      @default(0)
+  minStock    Int      @default(0) // For alerts
+  brand       String?
+  category    String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store       Store    @relation(fields: [storeId], references: [id])
+  saleItems   SaleItem[]
+  quoteItems  QuoteItem[]
+
+  // Unique constraint per store: A barcode can be repeated globally, but not within the same store
+  @@unique([storeId, barcode]) 
+}
+
+model Sale {
+  id        String   @id @default(uuid())
+  storeId   String
+  total     Decimal  @db.Decimal(10, 2)
+  paymentMethod String? // CASH, CARD, TRANSFER
+  createdAt DateTime @default(now())
+  
+  store     Store    @relation(fields: [storeId], references: [id])
+  items     SaleItem[]
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2) // Price at the moment of sale
+  
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  storeId   String
+  name      String
+  email     String?
+  phone     String?
+  
+  createdAt DateTime @default(now())
+  
+
+  
+  store     Store    @relation(fields: [storeId], references: [id])
+}
+
+model Quote {
+  id        String   @id @default(uuid())
+  storeId   String
+  clientName String
+  total     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  
+  store     Store    @relation(fields: [storeId], references: [id])
+  items     QuoteItem[]
+}
+
+model QuoteItem {
+  id        String   @id @default(uuid())
+  quoteId   String
+  productId String
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  
+  quote     Quote    @relation(fields: [quoteId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
