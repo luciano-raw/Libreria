@@ -36,9 +36,9 @@ export async function createQuote(data: {
             }
         })
         return { success: true, quote }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating quote:', error)
-        return { success: false, error: 'Failed to create quote' }
+        return { success: false, error: error.message || 'Failed to create quote' }
     }
 }
 

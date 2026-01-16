@@ -140,7 +140,7 @@ export default function SalesPage() {
             toast({ title: "Cotización Generada", description: "El PDF se ha generado correctamente." })
             setCart([])
         } else {
-            toast({ title: "Error", description: "No se pudo guardar la cotización.", variant: "destructive" })
+            toast({ title: "Error", description: res.error || "No se pudo guardar la cotización.", variant: "destructive" })
         }
     }
 
