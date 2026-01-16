@@ -4,6 +4,8 @@ import { db } from '../db'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 
+import { getActiveStoreId } from '../auth'
+
 export type ProductData = {
     name: string
     barcode?: string | null
@@ -11,25 +13,6 @@ export type ProductData = {
     brand?: string | null
     price: number
     stock: number
-}
-
-// Helper to get the store ID for the current user
-// For MVP/Demo, we might need a way to select the active store if the user has multiple.
-// For now, we'll assume the user belongs to at least one store and pick the first one,
-// or we will pass storeId as an argument if we build a proper dashboard selector.
-export async function getActiveStoreId() {
-    const { userId } = await auth()
-    if (!userId) throw new Error('Unauthorized')
-
-    // Find the first store this user belongs to
-    const userStore = await db.storeUser.findFirst({
-        where: { userId },
-        select: { storeId: true }
-    })
-
-    // Basic fallback for logic preservation: if no store, we can't add products.
-    if (!userStore) throw new Error('No Store found for this user')
-    return userStore.storeId
 }
 
 const serializeProduct = (product: any) => ({

@@ -2,7 +2,7 @@
 
 import { db } from '../db'
 import { auth } from '@clerk/nextjs/server'
-import { getActiveStoreId } from './products'
+import { getActiveStoreId } from '../auth'
 
 export async function createQuote(data: {
     clientName: string,

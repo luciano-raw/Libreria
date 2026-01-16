@@ -81,7 +81,8 @@ export async function getAllUsers() {
     try {
         await checkSuperAdmin()
         const users = await db.user.findMany({
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { stores: true }
         })
         return { success: true, users: users.map(serializeUser) }
     } catch (error) {

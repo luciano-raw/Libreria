@@ -59,19 +59,7 @@ export async function createFirstStore(storeName: string) {
     }
 }
 
-// Helper (duplicated from products.ts for now, ideally shared)
-async function getActiveStoreId() {
-    const { userId } = await auth()
-    if (!userId) throw new Error('Unauthorized')
-
-    const userStore = await db.storeUser.findFirst({
-        where: { userId },
-        select: { storeId: true }
-    })
-
-    if (!userStore) throw new Error('No Store found for this user')
-    return userStore.storeId
-}
+import { getActiveStoreId } from '../auth'
 
 export async function getStoreSettings() {
     try {

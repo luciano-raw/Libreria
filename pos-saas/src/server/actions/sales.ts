@@ -2,6 +2,7 @@
 
 import { db } from '../db'
 import { auth } from '@clerk/nextjs/server'
+import { getActiveStoreId } from '../auth'
 
 export type CartItem = {
     productId: string
@@ -17,12 +18,7 @@ export async function registerSale(cart: CartItem[], total: number, paymentMetho
 
     try {
         // 1. Get Store ID
-        const userStore = await db.storeUser.findFirst({
-            where: { userId },
-            select: { storeId: true }
-        })
-        if (!userStore) return { success: false, message: 'No tienes una tienda asignada.' }
-        const storeId = userStore.storeId
+        const storeId = await getActiveStoreId()
 
         // 2. Perform Transaction (Prisma $transaction)
         // This ensures either EVERYTHING succeeds or NOTHING does (rolling back stock changes)

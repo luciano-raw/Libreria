@@ -2,6 +2,7 @@ import { db } from '@/server/db'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { getPendingUsers, approveUser, rejectUser, getAllUsers, updateUserRole, deleteUser, suspendUser } from '@/server/actions/admin'
+import { startImpersonation } from '@/server/actions/impersonation'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -126,6 +127,15 @@ export default async function AdminPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {/* Impersonation Button */}
+                                                {user.stores && user.stores[0] && (
+                                                    <form action={async () => { 'use server'; await startImpersonation(user.stores[0].storeId) }}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-600 hover:text-indigo-400 hover:bg-indigo-500/10" title="Acceder como este usuario">
+                                                            <LogInIcon className="w-4 h-4" />
+                                                        </Button>
+                                                    </form>
+                                                )}
+
                                                 <form action={async () => { 'use server'; await suspendUser(user.id) }}>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-600 hover:text-amber-500 hover:bg-amber-500/10" title="Suspender Cuenta">
                                                         <PauseCircleIcon className="w-4 h-4" />
@@ -231,5 +241,11 @@ function ShieldCheckIcon(props: any) {
 function PauseCircleIcon(props: any) {
     return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="10" x2="10" y1="15" y2="9" /><line x1="14" x2="14" y1="15" y2="9" /></svg>
+    )
+}
+
+function LogInIcon(props: any) {
+    return (
+        <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
     )
 }

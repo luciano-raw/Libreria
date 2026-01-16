@@ -21,8 +21,10 @@ import { ClerkProvider } from '@clerk/nextjs'
 import NextTopLoader from 'nextjs-toploader';
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import ImpersonationBanner from "@/components/impersonation-banner"
+import { isImpersonating } from "@/server/auth"
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -40,6 +42,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <NextTopLoader color="#16a34a" showSpinner={false} />
+            <ImpersonationBanner isImpersonating={await isImpersonating()} />
             {children}
             <Toaster />
           </ThemeProvider>
