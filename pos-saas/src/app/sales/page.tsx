@@ -10,6 +10,9 @@ import { getProducts } from '@/server/actions/products'
 import { createQuote } from '@/server/actions/quotes'
 import { generateQuotePDF } from '@/lib/pdf-generator' // We will create this
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { processSale } from '@/server/actions/sales'
+import { Label } from '@/components/ui/label'
 
 // Types
 type Product = {
@@ -32,6 +35,11 @@ export default function SalesPage() {
     const [isLoading, setIsLoading] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { toast } = useToast()
+
+    // Checkout State
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+    const [isProcessingCheckout, setIsProcessingCheckout] = useState(false)
+    const [paymentMethod, setPaymentMethod] = useState('CASH')
 
     // Load initial products (active ones)
     useEffect(() => {
@@ -167,6 +175,23 @@ export default function SalesPage() {
         }
     }
 
+    async function handleCheckout() {
+        setIsProcessingCheckout(true)
+        const res = await processSale(
+            cart.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+            paymentMethod
+        )
+
+        if (res.success) {
+            toast({ title: "Venta Exitosa", description: "La venta se ha registrado correctamente." })
+            setCart([])
+            setIsCheckoutOpen(false)
+        } else {
+            toast({ title: "Error", description: res.message, variant: "destructive" })
+        }
+        setIsProcessingCheckout(false)
+    }
+
     return (
         <div className="h-[calc(100vh-4rem)] p-6 bg-zinc-950 flex gap-6 text-zinc-100">
             {/* Left: Product Catalog */}
@@ -298,6 +323,7 @@ export default function SalesPage() {
                         <Button
                             className="bg-emerald-600 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-900/20"
                             disabled={cart.length === 0}
+                            onClick={() => setIsCheckoutOpen(true)}
                         >
                             <Printer className="w-4 h-4 mr-2" />
                             Cobrar
@@ -306,6 +332,60 @@ export default function SalesPage() {
                 </div>
             </div>
             {/* Exit Link fixed position or integrated? For consistency with other pages, maybe a small back button somewhere, but requirement is just styling. The user didn't ask for a back button here specifically, but it's good practice. Given the density, I will stick to the requested styling. */}
+
+            <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+                <DialogContent className="sm:max-w-md bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Venta</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                            Seleccione el método de pago para finalizar.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-4">
+                        <div className="flex justify-between items-center bg-zinc-950 p-4 rounded-lg border border-zinc-800">
+                            <span className="text-zinc-400">Total a Cobrar</span>
+                            <span className="text-2xl font-bold text-emerald-500">${total.toLocaleString()}</span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-zinc-300">Método de Pago</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => setPaymentMethod('CASH')}
+                                    className={`p-3 rounded-md border text-sm font-medium transition-all ${paymentMethod === 'CASH' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'}`}
+                                >
+                                    Efectivo
+                                </button>
+                                <button
+                                    onClick={() => setPaymentMethod('CARD')}
+                                    className={`p-3 rounded-md border text-sm font-medium transition-all ${paymentMethod === 'CARD' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'}`}
+                                >
+                                    Tarjeta
+                                </button>
+                                <button
+                                    onClick={() => setPaymentMethod('TRANSFER')}
+                                    className={`p-3 rounded-md border text-sm font-medium transition-all ${paymentMethod === 'TRANSFER' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'}`}
+                                >
+                                    Transferencia
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="sm:justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={() => setIsCheckoutOpen(false)} className="text-zinc-400 hover:text-white">
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                            onClick={handleCheckout}
+                            disabled={isProcessingCheckout}
+                        >
+                            {isProcessingCheckout ? 'Procesando...' : 'Confirmar Cobro'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
