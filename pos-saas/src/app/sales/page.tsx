@@ -72,14 +72,37 @@ export default function SalesPage() {
         (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
-    // Check exact match for barcode scanning
-    useEffect(() => {
-        const exactMatch = products.find(p => p.barcode === searchQuery)
-        if (exactMatch && searchQuery.length > 3) { // Assume barcodes have some length
-            addToCart(exactMatch)
-            setSearchQuery('')
+    // Barcode Scanner Listener - Handled via Input KeyDown now for better reliability with scanners
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault() // Prevent any default form submission if wrapped in form
+
+            if (!searchQuery) return
+
+            // 1. Try exact barcode match first (Priority)
+            const exactMatch = products.find(p => p.barcode === searchQuery)
+            if (exactMatch) {
+                addToCart(exactMatch)
+                setSearchQuery('')
+                // Keep focus or re-focus logic is handled by the browser usually, 
+                // but we can ensure it stays focused if needed.
+                return
+            }
+
+            // 2. Optional: If no barcode match, but user pressed Enter on a name search
+            // If there is exactly one result in the filtered list, we could add it?
+            // For now, let's keep it simple: If not found by barcode, maybe show a toast?
+            // User asked specifically about barcode scanner configuration.
+
+            // Let's try case-insensitive barcode as fallback
+            const caseInsensitiveMatch = products.find(p => p.barcode?.toLowerCase() === searchQuery.toLowerCase())
+            if (caseInsensitiveMatch) {
+                addToCart(caseInsensitiveMatch)
+                setSearchQuery('')
+                return
+            }
         }
-    }, [searchQuery, products])
+    }
 
     function addToCart(product: Product) {
         if (product.stock <= 0) {
@@ -157,6 +180,7 @@ export default function SalesPage() {
                             placeholder="Buscar por nombre, código de barras o marca..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             autoFocus
                         />
                     </div>

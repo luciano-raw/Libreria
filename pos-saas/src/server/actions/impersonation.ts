@@ -37,7 +37,7 @@ export async function startImpersonation(targetStoreId: string) {
         secure: process.env.NODE_ENV === 'production'
     })
 
-    return { success: true }
+    redirect('/')
 }
 
 export async function stopImpersonation() {
