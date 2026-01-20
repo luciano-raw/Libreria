@@ -9,7 +9,7 @@ export default function Page() {
                         LM
                     </div>
                     <h2 className="text-2xl font-bold tracking-tight text-white">Crear Cuenta</h2>
-                    <p className="text-zinc-400">Comienza a gestionar tu librería hoy</p>
+                    <p className="text-zinc-400">Comienza a gestionar tu negocio hoy</p>
                 </div>
                 <div className="flex justify-center">
                     <SignUp

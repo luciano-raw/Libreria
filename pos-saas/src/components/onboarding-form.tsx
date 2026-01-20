@@ -29,17 +29,17 @@ export function OnboardingForm() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-[400px]">
         <CardHeader>
-          <CardTitle>Bienvenido a LibraryMaster</CardTitle>
-          <CardDescription>Para comenzar, crea tu primera librería.</CardDescription>
+          <CardTitle>Bienvenido a POS Master</CardTitle>
+          <CardDescription>Para comenzar, crea tu primer negocio.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="name">Nombre de la Librería</Label>
+                <Label htmlFor="name">Nombre del Negocio</Label>
                 <Input
                   id="name"
-                  placeholder="Ej. Librería Central"
+                  placeholder="Ej. Mi Gran Negocio"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -49,7 +49,7 @@ export function OnboardingForm() {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creando...' : 'Crear Librería'}
+              {loading ? 'Creando...' : 'Crear Negocio'}
             </Button>
           </CardFooter>
         </form>

@@ -36,7 +36,7 @@ export default async function Home() {
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-gray-50">
         <h1 className="text-2xl font-bold mb-2">⏳ Solicitud Recibida</h1>
         <p className="text-muted-foreground max-w-md mb-6">
-          Tu cuenta ha sido creada, pero requiere aprobación del Administrador para activar tu librería.
+          Tu cuenta ha sido creada, pero requiere aprobación del Administrador para activar tu negocio.
           <br />Te notificaremos cuando esté lista.
         </p>
         <div className="p-4 bg-white border rounded shadow-sm text-sm text-left w-full max-w-sm">

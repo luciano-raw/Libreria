@@ -45,7 +45,7 @@ export async function generateQuotePDF(quote: any) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(22)
     doc.setTextColor(COLORS.text_light[0], COLORS.text_light[1], COLORS.text_light[2])
-    doc.text(quote.store?.name || 'Librería Agosto 7', 15, 18)
+    doc.text(quote.store?.name || 'Mi Negocio', 15, 18)
 
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
@@ -61,7 +61,7 @@ export async function generateQuotePDF(quote: any) {
     doc.setFontSize(9)
     // Only show if available, otherwise use defaults
     const phone = quote.store?.phone || '(555) 123-4567'
-    const email = quote.store?.email || 'contacto@libreriaagosto7.com'
+    const email = quote.store?.email || 'contacto@negocio.com'
 
     doc.text(`Tel: ${phone}`, 195, 50, { align: 'right' })
     doc.text(`Email: ${email}`, 195, 55, { align: 'right' })

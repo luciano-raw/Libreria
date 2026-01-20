@@ -35,7 +35,7 @@ export default async function AdminPage() {
                         <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/20">
                             LM
                         </div>
-                        <span className="font-bold text-lg tracking-tight">Library<span className="text-purple-400">Master</span> <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Admin</span></span>
+                        <span className="font-bold text-lg tracking-tight">POS<span className="text-purple-400">Master</span> <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Admin</span></span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="hidden md:flex flex-col items-end mr-2">
@@ -108,7 +108,7 @@ export default async function AdminPage() {
                                 <div className="p-2 bg-blue-500/10 rounded-lg">
                                     <UsersIcon className="w-5 h-5 text-blue-400" />
                                 </div>
-                                <h2 className="font-semibold text-zinc-200">Libreros Activos</h2>
+                                <h2 className="font-semibold text-zinc-200">Negocios Activos</h2>
                             </div>
                             <Badge variant="secondary" className="bg-zinc-800 text-zinc-300">{librarians.length}</Badge>
                         </div>
@@ -151,7 +151,7 @@ export default async function AdminPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-center text-zinc-600 py-8 text-sm">No hay libreros activos.</p>
+                                <p className="text-center text-zinc-600 py-8 text-sm">No hay negocios activos.</p>
                             )}
                         </div>
                     </div>
