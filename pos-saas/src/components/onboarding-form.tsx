@@ -47,7 +47,7 @@ export function OnboardingForm() {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between pt-6">
             <Button type="submit" disabled={loading}>
               {loading ? 'Creando...' : 'Crear Negocio'}
             </Button>

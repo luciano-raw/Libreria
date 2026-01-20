@@ -91,7 +91,7 @@ export function ProductForm() {
                     </div>
 
                 </CardContent>
-                <CardFooter className="flex justify-between">
+                <CardFooter className="flex justify-between pt-6">
                     <Button variant="outline" type="button" onClick={() => router.back()}>Cancelar</Button>
                     <Button type="submit" disabled={loading}>
                         {loading ? 'Guardando...' : 'Guardar Producto'}
