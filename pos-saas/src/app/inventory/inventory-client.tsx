@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { updateProduct, deleteProduct, ProductData } from '@/server/actions/products'
-import { Trash2, Edit } from 'lucide-react'
+import { Trash2, Edit, Search } from 'lucide-react'
 
 type InventoryClientProps = {
     initialProducts: any[]
@@ -27,8 +27,18 @@ export default function InventoryClient({ initialProducts }: InventoryClientProp
     const [editingProduct, setEditingProduct] = useState<any | null>(null)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [formLoading, setFormLoading] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
     const { toast } = useToast()
     const router = useRouter() // Use router to refresh if needed, though we update local state
+
+    const filteredProducts = products.filter(product => {
+        const query = searchQuery.toLowerCase()
+        return (
+            product.name.toLowerCase().includes(query) ||
+            (product.brand && product.brand.toLowerCase().includes(query)) ||
+            (product.barcode && product.barcode.toLowerCase().includes(query))
+        )
+    })
 
     const handleEditClick = (product: any) => {
         setEditingProduct({ ...product }) // Copy to avoid ref issues
@@ -77,6 +87,18 @@ export default function InventoryClient({ initialProducts }: InventoryClientProp
 
     return (
         <>
+            <div className="flex items-center gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
+                    <Input
+                        placeholder="Buscar por nombre, marca o código..."
+                        className="pl-9 bg-zinc-900 border-zinc-800"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+
             <div className="border border-zinc-800 rounded-xl bg-zinc-900 shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader className="bg-zinc-900/50">
@@ -90,8 +112,8 @@ export default function InventoryClient({ initialProducts }: InventoryClientProp
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {products && products.length > 0 ? (
-                            products.map((product) => (
+                        {filteredProducts && filteredProducts.length > 0 ? (
+                            filteredProducts.map((product) => (
                                 <TableRow key={product.id} className="border-zinc-800 hover:bg-zinc-800/30 transition-colors">
                                     <TableCell className="font-mono text-zinc-500 font-medium">{product.barcode || '-'}</TableCell>
                                     <TableCell className="text-zinc-200 font-medium">{product.name}</TableCell>
@@ -131,8 +153,8 @@ export default function InventoryClient({ initialProducts }: InventoryClientProp
                             <TableRow className="border-zinc-800">
                                 <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
                                     <div className="flex flex-col items-center justify-center">
-                                        <span className="mb-2 text-lg">📦</span>
-                                        No hay productos. ¡Agrega el primero!
+                                        <span className="mb-2 text-lg">🔍</span>
+                                        No se encontraron productos.
                                     </div>
                                 </TableCell>
                             </TableRow>
