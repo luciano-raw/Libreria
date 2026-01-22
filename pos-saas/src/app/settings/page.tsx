@@ -12,6 +12,9 @@ import Link from 'next/link'
 export default function SettingsPage() {
     const [primaryColor, setPrimaryColor] = useState('#18181b')
     const [secondaryColor, setSecondaryColor] = useState('#27272a')
+    const [phone, setPhone] = useState('')
+    const [email, setEmail] = useState('')
+    const [address, setAddress] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const { toast } = useToast()
@@ -25,6 +28,9 @@ export default function SettingsPage() {
         if (res.success && res.settings) {
             setPrimaryColor((res.settings as any).pdfPrimaryColor || '#18181b')
             setSecondaryColor((res.settings as any).pdfSecondaryColor || '#27272a')
+            setPhone((res.settings as any).pdfPhone || '')
+            setEmail((res.settings as any).pdfEmail || '')
+            setAddress((res.settings as any).pdfAddress || '')
         }
         setIsLoading(false)
     }
@@ -33,7 +39,10 @@ export default function SettingsPage() {
         setIsSaving(true)
         const res = await updateStoreSettings({
             pdfPrimaryColor: primaryColor,
-            pdfSecondaryColor: secondaryColor
+            pdfSecondaryColor: secondaryColor,
+            pdfPhone: phone,
+            pdfEmail: email,
+            pdfAddress: address
         })
 
         if (res.success) {
@@ -65,10 +74,10 @@ export default function SettingsPage() {
                     <CardHeader>
                         <CardTitle className="text-zinc-100">Personalización de PDF</CardTitle>
                         <CardDescription className="text-zinc-400">
-                            Elige los colores que se usarán en tus cotizaciones y reportes PDF.
+                            Elige los colores y datos de contacto para tus cotizaciones.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label className="text-zinc-300">Color Principal (Cabeceras)</Label>
@@ -114,6 +123,36 @@ export default function SettingsPage() {
                                     />
                                 </div>
                                 <p className="text-xs text-zinc-500">Se usará para las cabeceras de las tablas.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-800">
+                            <div className="space-y-2">
+                                <Label className="text-zinc-300">Teléfono de Contacto</Label>
+                                <Input
+                                    placeholder="(555) 123-4567"
+                                    className="bg-zinc-950 border-zinc-800"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-300">Email de Contacto</Label>
+                                <Input
+                                    placeholder="contacto@negocio.com"
+                                    className="bg-zinc-950 border-zinc-800"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label className="text-zinc-300">Dirección</Label>
+                                <Input
+                                    placeholder="Calle Principal #1234"
+                                    className="bg-zinc-950 border-zinc-800"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                />
                             </div>
                         </div>
 

@@ -60,12 +60,13 @@ export async function generateQuotePDF(quote: any) {
     doc.setTextColor(COLORS.text_dark[0], COLORS.text_dark[1], COLORS.text_dark[2])
     doc.setFontSize(9)
     // Only show if available, otherwise use defaults
-    const phone = quote.store?.phone || '(555) 123-4567'
-    const email = quote.store?.email || 'contacto@negocio.com'
+    const phone = quote.store?.pdfPhone || quote.store?.phone || '(555) 123-4567'
+    const email = quote.store?.pdfEmail || quote.store?.email || 'contacto@negocio.com'
+    const address = quote.store?.pdfAddress || 'Calle Principal #1234'
 
     doc.text(`Tel: ${phone}`, 195, 50, { align: 'right' })
     doc.text(`Email: ${email}`, 195, 55, { align: 'right' })
-    doc.text('Calle Principal #1234', 195, 60, { align: 'right' })
+    doc.text(address, 195, 60, { align: 'right' })
 
     let yPos = 50
 

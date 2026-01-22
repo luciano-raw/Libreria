@@ -66,7 +66,13 @@ export async function getStoreSettings() {
         const storeId = await getActiveStoreId()
         const store = await db.store.findUnique({
             where: { id: storeId },
-            select: { pdfPrimaryColor: true, pdfSecondaryColor: true } as any
+            select: {
+                pdfPrimaryColor: true,
+                pdfSecondaryColor: true,
+                pdfPhone: true,
+                pdfEmail: true,
+                pdfAddress: true
+            } as any
         })
         return { success: true, settings: store }
     } catch (error) {
@@ -74,7 +80,13 @@ export async function getStoreSettings() {
     }
 }
 
-export async function updateStoreSettings(data: { pdfPrimaryColor: string, pdfSecondaryColor: string }) {
+export async function updateStoreSettings(data: {
+    pdfPrimaryColor: string,
+    pdfSecondaryColor: string,
+    pdfPhone: string,
+    pdfEmail: string,
+    pdfAddress: string
+}) {
     try {
         const storeId = await getActiveStoreId()
 
@@ -82,7 +94,10 @@ export async function updateStoreSettings(data: { pdfPrimaryColor: string, pdfSe
             where: { id: storeId },
             data: {
                 pdfPrimaryColor: data.pdfPrimaryColor,
-                pdfSecondaryColor: data.pdfSecondaryColor
+                pdfSecondaryColor: data.pdfSecondaryColor,
+                pdfPhone: data.pdfPhone,
+                pdfEmail: data.pdfEmail,
+                pdfAddress: data.pdfAddress
             }
         })
 
