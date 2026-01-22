@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { db } from '@/server/db'
+import { isImpersonating, getActiveStoreId } from '@/server/auth'
 import { OnboardingForm } from '@/components/onboarding-form'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -26,7 +27,8 @@ export default async function Home() {
   }
 
   // 2. Super Admin Redirect
-  if (dbUser.isSuperAdmin) {
+  const impersonating = await isImpersonating()
+  if (dbUser.isSuperAdmin && !impersonating) {
     redirect('/admin')
   }
 
@@ -85,14 +87,16 @@ export default async function Home() {
     )
   }
 
-  // 4. Approved Users -> Check Store
-  const userStore = await db.storeUser.findFirst({
-    where: { userId: user.id },
-    include: { store: true }
-  })
+  // 4. Approved Users -> Check Store / Impersonation
+  let storeId: string | undefined
+  try {
+    storeId = await getActiveStoreId()
+  } catch (err) {
+    // User has no store
+  }
 
   // 5. If Approved but no store -> Show Onboarding
-  if (!userStore) {
+  if (!storeId) {
     return <OnboardingForm />
   }
 
