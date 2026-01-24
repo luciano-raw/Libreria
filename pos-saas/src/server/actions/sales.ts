@@ -3,6 +3,7 @@
 import { db } from '@/server/db'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
+import { getActiveStoreId } from '@/server/auth'
 
 export type CartItemInput = {
     productId: string
@@ -15,13 +16,13 @@ export async function processSale(items: CartItemInput[], paymentMethod: string)
     if (!userId) return { success: false, message: 'No autenticado' }
 
     try {
-        // 1. Get User's Store
-        const userStore = await db.storeUser.findFirst({
-            where: { userId },
-            include: { store: true }
-        })
-
-        if (!userStore) return { success: false, message: 'No tienes una tienda asignada' }
+        // 1. Get Store (Handles Impersonation)
+        const storeId = await getActiveStoreId()
+        // getActiveStoreId throws if no store found, but let's wrap or handle if needed
+        // The helper throws 'No Store found for this user' or 'Unauthorized'. 
+        // We can catch those specific errors or just let the main catch handle it.
+        // However, the original code returned a specifc object for missing store.
+        // Let's rely on the try/catch block to return the error message.
 
         const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
 
@@ -39,7 +40,7 @@ export async function processSale(items: CartItemInput[], paymentMethod: string)
             // B. Create Sale Header
             const newSale = await tx.sale.create({
                 data: {
-                    storeId: userStore.storeId,
+                    storeId: storeId,
                     total: total,
                     paymentMethod: paymentMethod,
                 }
@@ -80,38 +81,39 @@ export async function getSalesHistory() {
     const { userId } = await auth()
     if (!userId) return { success: false, sales: [] }
 
-    const userStore = await db.storeUser.findFirst({
-        where: { userId }
-    })
+    try {
+        const storeId = await getActiveStoreId()
 
-    if (!userStore) return { success: false, sales: [] }
+        const sales = await db.sale.findMany({
+            where: { storeId: storeId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                items: {
+                    include: { product: true }
+                }
+            },
+            take: 100 // Limit for now
+        })
 
-    const sales = await db.sale.findMany({
-        where: { storeId: userStore.storeId },
-        orderBy: { createdAt: 'desc' },
-        include: {
-            items: {
-                include: { product: true }
-            }
-        },
-        take: 100 // Limit for now
-    })
-
-    // Serialize Decimal to number/string if needed, but client components might handle it better if we map
-    // Prisma returns Decimal which can't be passed to client directly sometimes
-    const safeSales = sales.map(s => ({
-        ...s,
-        total: Number(s.total),
-        items: s.items.map(i => ({
-            ...i,
-            price: Number(i.price),
-            product: {
-                ...i.product,
-                price: Number(i.product.price),
-                cost: i.product.cost ? Number(i.product.cost) : null
-            }
+        // Serialize Decimal to number/string if needed, but client components might handle it better if we map
+        // Prisma returns Decimal which can't be passed to client directly sometimes
+        const safeSales = sales.map(s => ({
+            ...s,
+            total: Number(s.total),
+            items: s.items.map(i => ({
+                ...i,
+                price: Number(i.price),
+                product: {
+                    ...i.product,
+                    price: Number(i.product.price),
+                    cost: i.product.cost ? Number(i.product.cost) : null
+                }
+            }))
         }))
-    }))
 
-    return { success: true, sales: safeSales }
+        return { success: true, sales: safeSales }
+    } catch (error) {
+        console.error("Error fetching sales history:", error)
+        return { success: false, sales: [] }
+    }
 }
