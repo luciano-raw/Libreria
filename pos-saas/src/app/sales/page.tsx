@@ -1,10 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Search, ShoppingCart, Trash2, Printer, FileText, Plus, Minus, AlertTriangle } from 'lucide-react'
+import { Search, ShoppingCart, Trash2, Printer, FileText, Plus, Minus, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { getProducts } from '@/server/actions/products'
 import { createQuote } from '@/server/actions/quotes'
@@ -186,6 +187,7 @@ export default function SalesPage() {
             toast({ title: "Venta Exitosa", description: "La venta se ha registrado correctamente." })
             setCart([])
             setIsCheckoutOpen(false)
+            loadProducts()
         } else {
             toast({ title: "Error", description: res.message, variant: "destructive" })
         }
@@ -197,6 +199,11 @@ export default function SalesPage() {
             {/* Left: Product Catalog */}
             <div className="flex-1 flex flex-col gap-4">
                 <div className="flex gap-4 bg-zinc-900 p-4 rounded-xl border border-zinc-800 shadow-sm sticky top-0 z-10">
+                    <Button variant="outline" size="icon" asChild className="shrink-0 border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700">
+                        <Link href="/">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Link>
+                    </Button>
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
                         <Input
