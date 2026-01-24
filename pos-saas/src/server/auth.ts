@@ -45,6 +45,16 @@ export async function getUserPermissions() {
     const { userId } = await auth()
     if (!userId) return []
 
+    // Check if user is Super Admin
+    const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { isSuperAdmin: true }
+    })
+
+    if (user?.isSuperAdmin) {
+        return ['sales', 'inventory', 'history', 'quotes']
+    }
+
     // Check store ID (respects impersonation)
     let storeId: string
     try {

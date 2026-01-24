@@ -35,7 +35,22 @@ export async function createQuote(data: {
                 }
             }
         })
-        return { success: true, quote }
+
+        const serializedQuote = {
+            ...quote,
+            total: Number(quote.total),
+            items: quote.items.map(item => ({
+                ...item,
+                price: Number(item.price),
+                product: {
+                    ...item.product,
+                    price: Number(item.product.price),
+                    cost: item.product.cost ? Number(item.product.cost) : null
+                }
+            }))
+        }
+
+        return { success: true, quote: serializedQuote }
     } catch (error: any) {
         console.error('Error creating quote:', error)
         return { success: false, error: error.message || 'Failed to create quote' }
@@ -57,7 +72,13 @@ export async function getQuotes() {
                 store: true
             }
         })
-        return { success: true, quotes }
+
+        const serializedQuotes = quotes.map(quote => ({
+            ...quote,
+            total: Number(quote.total)
+        }))
+
+        return { success: true, quotes: serializedQuotes }
     } catch (error) {
         return { success: false, quotes: [] }
     }
@@ -80,7 +101,21 @@ export async function getQuote(id: string) {
             return { success: false, error: 'Quote not found' }
         }
 
-        return { success: true, quote }
+        const serializedQuote = {
+            ...quote,
+            total: Number(quote.total),
+            items: quote.items.map(item => ({
+                ...item,
+                price: Number(item.price),
+                product: {
+                    ...item.product,
+                    price: Number(item.product.price),
+                    cost: item.product.cost ? Number(item.product.cost) : null
+                }
+            }))
+        }
+
+        return { success: true, quote: serializedQuote }
     } catch (error) {
         return { success: false, error: 'Error fetching quote' }
     }
