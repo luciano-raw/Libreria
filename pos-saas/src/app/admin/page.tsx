@@ -33,7 +33,7 @@ export default async function AdminPage() {
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/20">
-                            LM
+                            PM
                         </div>
                         <span className="font-bold text-lg tracking-tight">POS<span className="text-purple-400">Master</span> <span className="text-xs ml-2 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Admin</span></span>
                     </div>

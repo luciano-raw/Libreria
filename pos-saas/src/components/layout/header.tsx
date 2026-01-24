@@ -8,7 +8,7 @@ export function Header() {
                 <div className="mr-4 hidden md:flex">
                     <Link href="/" className="mr-6 flex items-center space-x-2">
                         <span className="hidden font-bold sm:inline-block">
-                            POS SaaS
+                            POSMaster
                         </span>
                     </Link>
                 </div>
@@ -21,6 +21,6 @@ export function Header() {
                     </nav>
                 </div>
             </div>
-        </header>
+        </header >
     )
 }
