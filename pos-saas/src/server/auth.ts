@@ -40,3 +40,26 @@ export async function isImpersonating() {
     const cookieStore = await cookies()
     return !!cookieStore.get('impersonated_store_id')?.value
 }
+
+export async function getUserPermissions() {
+    const { userId } = await auth()
+    if (!userId) return []
+
+    // Check store ID (respects impersonation)
+    let storeId: string
+    try {
+        storeId = await getActiveStoreId()
+    } catch {
+        return []
+    }
+
+    const storeUser = await db.storeUser.findFirst({
+        where: { userId, storeId },
+        select: { permissions: true, role: true }
+    })
+
+    // Admins/Owner/Manager might implicitly have all, but let's stick to permissions field for granular control.
+    // Or we can say OWNER has access to everything.
+    // For now, return the assigned permissions.
+    return storeUser?.permissions || []
+}

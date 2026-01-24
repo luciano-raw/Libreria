@@ -60,6 +60,7 @@ model StoreUser {
   userId    String
   storeId   String
   role      Role     @default(STAFF) // OWNER, MANAGER, STAFF
+  permissions String[] @default(["sales", "inventory", "history", "quotes"])
 
   user      User     @relation(fields: [userId], references: [id])
   store     Store    @relation(fields: [storeId], references: [id])

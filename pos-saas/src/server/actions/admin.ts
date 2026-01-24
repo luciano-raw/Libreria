@@ -121,6 +121,7 @@ export async function deleteUser(userId: string) {
 
         await db.storeUser.deleteMany({ where: { userId } })
 
+
         await db.user.delete({
             where: { id: userId }
         })
@@ -129,5 +130,24 @@ export async function deleteUser(userId: string) {
     } catch (error) {
         console.error(error)
         return { success: false, message: 'Error al eliminar usuario.' }
+    }
+}
+
+export async function updateUserPermissions(userId: string, permissions: string[]) {
+    try {
+        await checkSuperAdmin()
+        // Update all StoreUser records for this user? Or just the first one?
+        // Since we are not specifying a store in the admin panel yet, let's assume one user = one main store for now,
+        // or update all of them if the logic is "Role-based".
+        // Let's perform updateMany as a safe bet for this simple multi-tenancy model.
+        await db.storeUser.updateMany({
+            where: { userId: userId },
+            data: { permissions: permissions }
+        })
+        revalidatePath('/admin')
+        return { success: true, message: 'Permisos actualizados.' }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: 'Error al actualizar permisos.' }
     }
 }

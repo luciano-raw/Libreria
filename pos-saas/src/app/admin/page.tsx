@@ -1,13 +1,27 @@
 import { db } from '@/server/db'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { getPendingUsers, approveUser, rejectUser, getAllUsers, updateUserRole, deleteUser, suspendUser } from '@/server/actions/admin'
+import { getPendingUsers, approveUser, rejectUser, getAllUsers, updateUserRole, deleteUser, suspendUser, updateUserPermissions } from '@/server/actions/admin'
 import { startImpersonation } from '@/server/actions/impersonation'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { SignOutButton } from '@clerk/nextjs'
-import { LogOut } from 'lucide-react'
+import { LogOut, LayoutGrid } from 'lucide-react'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+
+// ... imports ...
 
 export default async function AdminPage() {
     const { userId } = await auth()
@@ -126,7 +140,10 @@ export default async function AdminPage() {
                                                     <div className="text-zinc-500 text-xs">{user.email}</div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {/* Permissions Dialog */}
+                                                <PermissionsDialog user={user} />
+
                                                 {/* Impersonation Button */}
                                                 {user.stores && user.stores[0] && (
                                                     <form action={async () => { 'use server'; await startImpersonation(user.stores[0].storeId) }}>
@@ -141,11 +158,8 @@ export default async function AdminPage() {
                                                         <PauseCircleIcon className="w-4 h-4" />
                                                     </Button>
                                                 </form>
-                                                <form action={async () => { 'use server'; await deleteUser(user.id) }}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-600 hover:text-red-500 hover:bg-red-500/10" title="Eliminar Definitivamente">
-                                                        <Trash2Icon className="w-4 h-4" />
-                                                    </Button>
-                                                </form>
+
+                                                <DeleteUserDialog userId={user.id} userName={user.name || 'Sin nombre'} />
                                             </div>
                                         </div>
                                     ))}
@@ -176,11 +190,14 @@ export default async function AdminPage() {
                                                     <span className="text-red-400/50 text-xs">{user.email}</span>
                                                 </div>
                                             </div>
-                                            <form action={async () => { 'use server'; await approveUser(user.id) }}>
-                                                <Button size="sm" variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/20 h-7 text-xs">
-                                                    Reactivar
-                                                </Button>
-                                            </form>
+                                            <div className="flex gap-2">
+                                                <form action={async () => { 'use server'; await approveUser(user.id) }}>
+                                                    <Button size="sm" variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/20 h-7 text-xs">
+                                                        Reactivar
+                                                    </Button>
+                                                </form>
+                                                <DeleteUserDialog userId={user.id} userName={user.name || 'Usuario'} />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -219,6 +236,18 @@ export default async function AdminPage() {
         </div>
     )
 }
+
+function PermissionsDialog({ user }: { user: any }) {
+    // Current permissions are inside user.stores[0].permissions (array of strings)
+    // We need to manage this state. Since this is a server component, we can't use state directly unless we make this a client component.
+    // So we will make a small client component wrapper or just submit the form directly.
+    return (
+        <ClientPermissionsDialog user={user} />
+    )
+}
+
+import { ClientPermissionsDialog } from './client-permissions-dialog'
+import { DeleteUserDialog } from './delete-user-dialog' // Add new import // We need to create this
 
 function Trash2Icon(props: any) {
     return (
