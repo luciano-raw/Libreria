@@ -141,6 +141,7 @@ model Quote {
   storeId   String
   clientName String
   total     Decimal  @db.Decimal(10, 2)
+  status    String   @default("DRAFT") // DRAFT, APPROVED, CONVERTED
   createdAt DateTime @default(now())
   
   store     Store    @relation(fields: [storeId], references: [id])

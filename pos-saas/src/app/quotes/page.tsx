@@ -1,25 +1,38 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getQuotes, getQuote } from '@/server/actions/quotes'
+import { getQuotes, getQuote, duplicateQuote, convertQuoteToSale, updateQuoteStatus } from '@/server/actions/quotes'
 import { generateQuotePDF } from '@/lib/pdf-generator'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, FileText, Download, Loader2, Eye, Settings } from 'lucide-react'
+import { Search, FileText, Download, Loader2, Eye, Settings, Copy, ShoppingCart, CheckCircle, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { useToast } from '@/hooks/use-toast'
 
 export default function QuotesPage() {
     const [quotes, setQuotes] = useState<any[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [isLoading, setIsLoading] = useState(true)
+    const [isActionLoading, setIsActionLoading] = useState(false)
+    const { toast } = useToast()
+
+    // Preview State
     const [selectedQuote, setSelectedQuote] = useState<any | null>(null)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-    const { toast } = useToast()
+
+    // Duplicate State
+    const [isDuplicateOpen, setIsDuplicateOpen] = useState(false)
+    const [quoteToDuplicate, setQuoteToDuplicate] = useState<any | null>(null)
+    const [newName, setNewName] = useState('')
+
+    // Convert State
+    const [isConvertOpen, setIsConvertOpen] = useState(false)
+    const [quoteToConvert, setQuoteToConvert] = useState<any | null>(null)
 
     useEffect(() => {
         loadQuotes()
@@ -40,9 +53,7 @@ export default function QuotesPage() {
     )
 
     const handleDownloadPDF = async (quote: any) => {
-
         let fullQuote = quote
-        // Fetch full details if items not present (list query might be light)
         if (!quote.items) {
             const res = await getQuote(quote.id)
             if (res.success) fullQuote = res.quote
@@ -65,6 +76,64 @@ export default function QuotesPage() {
             setIsPreviewOpen(true)
         } else {
             toast({ title: "Error", description: "No se pudieron cargar los detalles.", variant: "destructive" })
+        }
+    }
+
+    // --- Duplicate Actions ---
+    const openDuplicate = (quote: any) => {
+        setQuoteToDuplicate(quote)
+        setNewName(`${quote.clientName} (Copia)`)
+        setIsDuplicateOpen(true)
+    }
+
+    const handleDuplicate = async () => {
+        if (!quoteToDuplicate) return
+        setIsActionLoading(true)
+        const res = await duplicateQuote(quoteToDuplicate.id, newName)
+        setIsActionLoading(false)
+
+        if (res.success) {
+            toast({ title: "Éxito", description: "Cotización duplicada correctamente." })
+            setIsDuplicateOpen(false)
+            loadQuotes()
+        } else {
+            toast({ title: "Error", description: res.error, variant: "destructive" })
+        }
+    }
+
+    // --- Convert Actions ---
+    const openConvert = (quote: any) => {
+        setQuoteToConvert(quote)
+        setIsConvertOpen(true)
+    }
+
+    const handleConvert = async () => {
+        if (!quoteToConvert) return
+        setIsActionLoading(true)
+        const res = await convertQuoteToSale(quoteToConvert.id)
+        setIsActionLoading(false)
+
+        if (res.success) {
+            toast({ title: "Éxito", description: "Cotización convertida en venta." })
+            setIsConvertOpen(false)
+            loadQuotes() // Refresh logic could be optimized
+        } else {
+            toast({ title: "Error", description: res.error, variant: "destructive" })
+        }
+    }
+
+    // --- Status Actions ---
+    const changeStatus = async (quote: any, status: string) => {
+        const res = await updateQuoteStatus(quote.id, status)
+        if (res.success) {
+            toast({ title: "Actualizado", description: `Estado cambiado a ${status}.` })
+            loadQuotes() // Or update local state
+            if (selectedQuote && selectedQuote.id === quote.id) {
+                // Refresh preview if open
+                handlePreview(quote)
+            }
+        } else {
+            toast({ title: "Error", description: res.error, variant: "destructive" })
         }
     }
 
@@ -110,13 +179,14 @@ export default function QuotesPage() {
                                 <TableHead className="text-zinc-400">Cliente</TableHead>
                                 <TableHead className="text-zinc-400">Items</TableHead>
                                 <TableHead className="text-zinc-400">Total</TableHead>
+                                <TableHead className="text-zinc-400">Estado</TableHead>
                                 <TableHead className="text-right text-zinc-400">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow className="border-zinc-800">
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-zinc-600" />
                                     </TableCell>
                                 </TableRow>
@@ -135,8 +205,20 @@ export default function QuotesPage() {
                                         <TableCell className="font-bold text-zinc-100">
                                             ${Number(quote.total).toLocaleString()}
                                         </TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={quote.status} />
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => openDuplicate(quote)}
+                                                    className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                                    title="Duplicar"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -161,7 +243,7 @@ export default function QuotesPage() {
                                 ))
                             ) : (
                                 <TableRow className="border-zinc-800">
-                                    <TableCell colSpan={5} className="h-32 text-center text-zinc-500">
+                                    <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
                                         {searchQuery ? 'No se encontraron cotizaciones.' : 'No hay cotizaciones registradas.'}
                                     </TableCell>
                                 </TableRow>
@@ -175,10 +257,36 @@ export default function QuotesPage() {
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
                 <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-zinc-100">
                     <DialogHeader>
-                        <DialogTitle className="text-zinc-100">Detalle de Cotización #{selectedQuote?.id.slice(0, 8)}</DialogTitle>
+                        <DialogTitle className="text-zinc-100 flex items-center gap-2">
+                            Detalle de Cotización #{selectedQuote?.id.slice(0, 8)}
+                            {selectedQuote && <StatusBadge status={selectedQuote.status} />}
+                        </DialogTitle>
                     </DialogHeader>
                     {selectedQuote && (
                         <div className="space-y-6">
+                            <div className="flex justify-end gap-2 mb-2">
+                                {selectedQuote.status === "DRAFT" && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => changeStatus(selectedQuote, "APPROVED")}
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                        Aprobar Cotización
+                                    </Button>
+                                )}
+                                {selectedQuote.status === "APPROVED" && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => openConvert(selectedQuote)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        <ShoppingCart className="w-4 h-4 mr-2" />
+                                        Convertir a Venta
+                                    </Button>
+                                )}
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-950/50 rounded-lg border border-zinc-800">
                                 <div>
                                     <span className="text-sm text-zinc-500 block">Cliente</span>
@@ -235,6 +343,82 @@ export default function QuotesPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Duplicate Dialog */}
+            <Dialog open={isDuplicateOpen} onOpenChange={setIsDuplicateOpen}>
+                <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <DialogHeader>
+                        <DialogTitle className="text-zinc-100">Duplicar Cotización</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                            Ingresa el nombre del cliente para la nueva cotización.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-2">
+                        <Label htmlFor="duplicateName" className="text-zinc-300">Nuevo Cliente / Referencia</Label>
+                        <Input
+                            id="duplicateName"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            className="bg-zinc-950 border-zinc-700 text-white"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDuplicateOpen(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">Cancelar</Button>
+                        <Button onClick={handleDuplicate} disabled={isActionLoading || !newName.trim()} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                            {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Duplicar"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Convert Dialog */}
+            <Dialog open={isConvertOpen} onOpenChange={setIsConvertOpen}>
+                <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <DialogHeader>
+                        <DialogTitle className="text-zinc-100 flex items-center gap-2">
+                            <ShoppingCart className="w-5 h-5" />
+                            Confirmar Venta
+                        </DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                            ¿Estás seguro de convertir esta cotización en una venta confirmada?
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="p-4 bg-yellow-900/10 border border-yellow-900/30 rounded-lg text-yellow-500 text-sm flex items-start gap-3">
+                        <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-bold">Acción irreversible</p>
+                            <p className="mt-1 opacity-90">Se descontarán los productos del inventario y se registrará la venta en el historial.</p>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={() => setIsConvertOpen(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">Cancelar</Button>
+                        <Button onClick={handleConvert} disabled={isActionLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+                            {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar Venta"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
+    )
+}
+
+function StatusBadge({ status }: { status: string }) {
+    if (!status) return null
+    const styles: Record<string, string> = {
+        DRAFT: "bg-zinc-800 text-zinc-400 border-zinc-700",
+        APPROVED: "bg-green-900/30 text-green-400 border-green-900/50",
+        CONVERTED: "bg-blue-900/30 text-blue-400 border-blue-900/50",
+    }
+    const labels: Record<string, string> = {
+        DRAFT: "Borrador",
+        APPROVED: "Aprobada",
+        CONVERTED: "Vendida",
+    }
+    return (
+        <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${styles[status] || styles.DRAFT}`}>
+            {labels[status] || status}
+        </span>
     )
 }
